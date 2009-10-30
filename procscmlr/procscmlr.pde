@@ -49,13 +49,14 @@ Integer monomeWidth = 8;
 Integer monomeHeight = 8;
 String[] samples = new String[monomeHeight];
 Buffer[] buffers = new Buffer[monomeHeight];
+Synth[] synths = new Synth[monomeHeight];
 
 // AA TODO: Add support for multiple simultaneous buffers
 
 void setup ()
 {
-  buffer = new Buffer(2);
-  buffer.read(sample, this, "done"); 
+  buffers[itemNum] = new Buffer(2);
+  buffers[itemNum].read(sample, this, "done"); 
 
   m = new MonomeOSC(this);
   m.lightsOff();
@@ -64,7 +65,7 @@ void setup ()
   size(600,400);
   controlP5 = new ControlP5(this);
   l = controlP5.addScrollList("myList", 100,100,400,280);
-  l.setLabel("Samples");
+  l.setLabel("Drag samples (wav) onto the window");
   addSample(sample);
 }
 
@@ -75,15 +76,15 @@ void draw ()
 void done (Buffer buffer)
 {
   println("Buffer loaded.");
-  println("Channels:    " + buffer.channels);
-  println("Frames:      " + buffer.frames);
-  println("Sample Rate: " + buffer.sampleRate);
+  println("Channels:    " + buffers[itemNum].channels);
+  println("Frames:      " + buffers[itemNum].frames);
+  println("Sample Rate: " + buffers[itemNum].sampleRate);
   
-  synth = new Synth("playbuf_2");
+  synths[itemNum] = new Synth("playbuf_2");
 //  synth = new Synth("mlr");
 //  synth = new Synth("playbuf_3");
   
-  synth.set("bufnum", buffer.index);
+  synths[itemNum].set("bufnum", buffers[itemNum].index);
 //  synth.set("startPos", (int)(buffer.frames / 2));
 //  synth.create();
 }
@@ -103,28 +104,31 @@ void monomePressed(int x, int y)
   m.lightsOff();
   m.lightOn(x, y);
   
-  if (synth.created)
+  println("monomePressed: x, y: " + x + ", " + y);
+  if (synths[y].created)
   {
-    synth.free();
+    synths[y].free();
   }
+  
   
   println("x, y: " + x + ", " + y);
   println("x / 8 = " + ((x / 8f)));
-  println("Buffer position: Frame " + (buffer.frames * (x / 8f)));
-  synth.set("startPos", (int)(buffer.frames * (x / 8f)));
-  synth.create();
+  println("Buffer position: Frame " + (buffers[y].frames * (x / 8f)));
+  synths[y].set("startPos", (int)(buffers[y].frames * (x / 8f)));
+  synths[y].create();
 }
 
 void stop()
 {
-  buffer.free(this, "freed");
-  synth.free();
+/*  buffers[itemNum].free(this, "freed");
+  synths[itemNum].free();
+  */
 }
 
 void dropEvent(DropEvent theDropEvent) 
 {
-  addSample("" + theDropEvent.file());
   loadBuffer("" + theDropEvent.file());
+  addSample("" + theDropEvent.file());
 }
 
 void controlEvent(ControlEvent event) 
@@ -153,8 +157,8 @@ void addSample(String fileName)
 
 void loadBuffer(String fileName)
 {
-  synth.free();
-  buffer.free();
-  buffer = new Buffer(2);
-  buffer.read(fileName, this, "done");            
+//  synth.free();
+//  buffer.free();
+  buffers[itemNum] = new Buffer(2);
+  buffers[itemNum].read(fileName, this, "done");            
 }
