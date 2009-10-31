@@ -36,27 +36,24 @@ import jklabs.monomic.*;
 import sojamo.drop.*;
 import controlP5.*;
 
-Buffer buffer;
 Monome m;
-Synth synth;
 SDrop drop;
 ControlP5 controlP5;
 ScrollList l;
 
 String sample = "F:\\Documents and Settings\\Ash\\Desktop\\Monome\\Samples\\02. Rusty Nails.wav";
-Integer itemNum = 0;
+Integer itemNum = 1;
 Integer monomeWidth = 8;
 Integer monomeHeight = 8;
 String[] samples = new String[monomeHeight];
 Buffer[] buffers = new Buffer[monomeHeight];
 Synth[] synths = new Synth[monomeHeight];
 
-// AA TODO: Add support for multiple simultaneous buffers
-
 void setup ()
 {
-  buffers[itemNum] = new Buffer(2);
+/*  buffers[itemNum] = new Buffer(2);
   buffers[itemNum].read(sample, this, "done"); 
+  */
 
   m = new MonomeOSC(this);
   m.lightsOff();
@@ -76,15 +73,15 @@ void draw ()
 void done (Buffer buffer)
 {
   println("Buffer loaded.");
-  println("Channels:    " + buffers[itemNum].channels);
-  println("Frames:      " + buffers[itemNum].frames);
-  println("Sample Rate: " + buffers[itemNum].sampleRate);
+  println("Channels:    " + buffers[itemNum - 1].channels);
+  println("Frames:      " + buffers[itemNum - 1].frames);
+  println("Sample Rate: " + buffers[itemNum - 1].sampleRate);
   
-  synths[itemNum] = new Synth("playbuf_2");
+  synths[itemNum - 1] = new Synth("playbuf_2");
 //  synth = new Synth("mlr");
 //  synth = new Synth("playbuf_3");
   
-  synths[itemNum].set("bufnum", buffers[itemNum].index);
+  synths[itemNum - 1].set("bufnum", buffers[itemNum - 1].index);
 //  synth.set("startPos", (int)(buffer.frames / 2));
 //  synth.create();
 }
@@ -101,21 +98,44 @@ void freed (Buffer buffer)
 
 void monomePressed(int x, int y)
 {
-  m.lightsOff();
-  m.lightOn(x, y);
-  
-  println("monomePressed: x, y: " + x + ", " + y);
-  if (synths[y].created)
+  if( y == 0 )    // Top row turns off each sample
   {
-    synths[y].free();
+    if( synths[x + 1].created )
+    {
+      synths[x + 1].free();
+      for( int i = 0; i < 8; i++ )
+      {
+        m.lightOff(i, x + 1);
+      }
+      m.lightOff(x, y);
+    }
+    else
+    {
+      monomePressed(0, x + 1);
+    }
+    
   }
-  
-  
-  println("x, y: " + x + ", " + y);
-  println("x / 8 = " + ((x / 8f)));
-  println("Buffer position: Frame " + (buffers[y].frames * (x / 8f)));
-  synths[y].set("startPos", (int)(buffers[y].frames * (x / 8f)));
-  synths[y].create();
+  else
+  {    
+    for( int i = 0; i < 8; i++ )
+    {
+      m.lightOff(i, y);
+    }
+    m.lightOn(x, y);
+    m.lightOn(y - 1, 0);
+    
+    println("monomePressed: x, y: " + x + ", " + y);
+    if (synths[y].created)
+    {
+      synths[y].free();
+    }    
+    
+    println("x, y: " + x + ", " + y);
+    println("x / 8 = " + ((x / 8f)));
+    println("Buffer position: Frame " + (buffers[y].frames * (x / 8f)));
+    synths[y].set("startPos", (int)(buffers[y].frames * (x / 8f)));
+    synths[y].create();
+  }
 }
 
 void stop()
@@ -127,7 +147,6 @@ void stop()
 
 void dropEvent(DropEvent theDropEvent) 
 {
-  loadBuffer("" + theDropEvent.file());
   addSample("" + theDropEvent.file());
 }
 
@@ -136,8 +155,9 @@ void controlEvent(ControlEvent event)
   if (event.isController())
   {
     //Button press
-    println(event.controller().value()+ " from " + event.controller());
+/*    println(event.controller().value()+ " from " + event.controller());
     loadBuffer(samples[(int)event.controller().value()]);
+    */
   }
   else if (event.isGroup()) 
   {
@@ -152,6 +172,7 @@ void addSample(String fileName)
   controlP5.Button b = l.addItem(fileName, itemNum);
   b.setId(100 + itemNum);
   samples[itemNum] = fileName;
+  loadBuffer(fileName);
   itemNum++;
 }
 
@@ -159,6 +180,8 @@ void loadBuffer(String fileName)
 {
 //  synth.free();
 //  buffer.free();
+
+  println("loadBuffer itemNum: " + itemNum);
   buffers[itemNum] = new Buffer(2);
-  buffers[itemNum].read(fileName, this, "done");            
+  buffers[itemNum].read(fileName, this, "done");
 }
