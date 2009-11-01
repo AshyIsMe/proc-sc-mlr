@@ -1,3 +1,9 @@
-First commit
+This app is a basic clone of mlr done to teach us about Processing and SuperCollider.
+- Aaron.
 
-Test by ed
+Usage:
+Start up MonomeSerial prefix "/box" (i think this is required).
+Start up SuperCollider and boot server.
+Start proc-sc-mlr.
+Drag some wav (or aif) files onto the window and then press some buttons on the monome.
+Top row turns off samples and rows below allow you to skip through each sample.
